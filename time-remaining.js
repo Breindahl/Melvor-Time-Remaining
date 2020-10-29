@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Melvor TimeRemaining
 // @namespace    http://tampermonkey.net/
-// @version      0.5.4.2
+// @version      0.6.0
 // @description  Shows time remaining for completing a task with your current resources. Takes into account Mastery Levels and other bonuses.
 // @author       Breindahl#2660
 // @match        https://melvoridle.com/*
@@ -61,6 +61,31 @@
 		$("#skill-cooking-food-selected-qty").after(TempContainerAlt[0] + "timeLeftCooking" + TempContainerAlt[1]);
 		$("#skill-fm-logs-selected-qty").after(TempContainerAlt[0] + "timeLeftFiremaking" + TempContainerAlt[1]);
 		$("#magic-item-have-and-div").after(TempContainer[0] + "timeLeftMagic" + TempContainer[1]);
+
+		// Mastery Pool progress
+        for(let id in SKILLS) {
+            if(SKILLS[id].hasMastery) {
+                let bar = $(`#mastery-pool-progress-${id}`)[0];
+                $(bar).after(`<div id="mastery-pool-progress-end-${id}" class="progress-bar bg-warning" role="progressbar" style="width: 0%; background-color: #e5ae679c !important;"></div>`);
+            }
+        }
+
+		// Mastery Progress bars
+        for(let id in SKILLS) {
+            if(SKILLS[id].hasMastery) {
+                let name = skillName[id].toLowerCase();
+				let bar = $(`#${name}-mastery-progress`)[0];
+                $(bar).after(`<div id="${id}-mastery-pool-progress-end" class="progress-bar bg-info" role="progressbar" style="width: 0%; background-color: #5cace59c !important;"></div>`);
+            }
+        }
+
+		// Mastery Skill progress
+        for(let id in SKILLS) {
+            if(SKILLS[id].hasMastery) {
+                let bar = $(`#skill-progress-bar-${id}`)[0];
+                $(bar).after(`<div id="skill-progress-bar-end-${id}" class="progress-bar bg-info" role="progressbar" style="width: 0%; background-color: #5cace59c !important;"></div>`);
+            }
+        }
 
 		// Funtion to get unformatted number for Qty
 		function getQtyUnformat(itemID) {
@@ -142,6 +167,23 @@
 		// Get Mastery Level of given Skill and Mastery ID
 		function getMasteryLevel(skill, masteryID) {
 			return convertXPToLvl(MASTERY[skill].xp[masteryID]);
+		}
+
+		// Progress in current level
+		function getPercentageInLevel(currentXP, finalXP, type, bar = false) {
+			let currentLevel = convertXPToLvl(currentXP, true);
+			if (currentLevel >= 99 && (type == "mastery" || bar == true)) return 0;
+			let currentLevelXP = convertLvlToXP(currentLevel);
+			let nextLevelXP = convertLvlToXP(currentLevel+1);
+			let diffLevelXP = nextLevelXP - currentLevelXP;
+			let currentLevelPercentage = (currentXP - currentLevelXP) / diffLevelXP * 100;
+			if (bar == true) {
+				let finalLevelPercentage = ((finalXP - currentXP) > (nextLevelXP - currentXP)) ? 100 - currentLevelPercentage : ((finalXP - currentXP)/diffLevelXP*100).toFixed(4);
+				return finalLevelPercentage;
+			}
+			else {
+				return currentLevelPercentage;
+			}
 		}
 
 		// Main function
@@ -543,7 +585,7 @@
 				let currentTotalSkillXP = initialSkillXP;
 				let currentTotalPoolXP = initialTotalMasteryPoolXP;
 				let currentTotalMasteryLevelForSkill = initialTotalMasteryLevelForSkill;
-
+				
 				while (resources > 0) {
 					// Adjustments
 					let currentPreservationAdjustment = preservationAdjustment(currentTotalPoolXP);
@@ -611,7 +653,7 @@
 					// Level up mastery if hitting Mastery limit
 					if ( masteryXPActions == expectedActions ) currentTotalMasteryLevelForSkill++;
 				}
-				return {"timeLeft" : Math.round(sumTotalTime), "finalSkillLevel" : convertXPToLvl(currentTotalSkillXP,true), "finalMasteryLevel" : convertXPToLvl(currentTotalMasteryXP), "finalPoolPercentage" : Math.min((currentTotalPoolXP/masteryPoolMaxXP)*100,100).toFixed(2), "maxPoolTime" : maxPoolTime, "maxMasteryTime" : maxMasteryTime, "maxSkillTime" : maxSkillTime };
+				return {"timeLeft" : Math.round(sumTotalTime), "finalSkillXP" : currentTotalSkillXP, "finalMasteryXP" : currentTotalMasteryXP, "finalPoolPercentage" : Math.min((currentTotalPoolXP/masteryPoolMaxXP)*100,100).toFixed(2), "maxPoolTime" : maxPoolTime, "maxMasteryTime" : maxMasteryTime, "maxSkillTime" : maxSkillTime};
 			}
 
 			var results = calcExpectedTime(recordCraft);
@@ -646,8 +688,8 @@
 					timeLeftElement.style.display = "none";
 				}
 			}
-			// Generate progression Tooltips for all skills that aren't Magic
 			if (skillID != CONSTANTS.skill.Magic) {
+				// Generate progression Tooltips
 				if (!timeLeftElement._tippy) {
 					tippy(timeLeftElement, {
 						allowHTML: true,
@@ -655,27 +697,38 @@
 						animation: false,
 					});
 				}
-				let wrapper = ['<div class="row"><div class="col-8" style="white-space: nowrap;"><h3 class="block-title m-1" style="color:white;" >','</h3></div><div class="col-4" style="white-space: nowrap; text-align:right;"><h3 class="block-title m-1"><span class="p-1 bg-',' rounded" style="text-align:center; display: inline-block;line-height: normal;width: 70px;color:white;">','</span></h3></div></div>'];
-				let finalSkillLevel = wrapper[0] + 'Final Skill Level ' + wrapper[1] + 'success' + wrapper[2] + results.finalSkillLevel + ' / 99' + wrapper[3];
+				let wrapper = ['<div class="row"><div class="col-6" style="white-space: nowrap;"><h3 class="block-title m-1" style="color:white;" >','</h3></div><div class="col-6" style="white-space: nowrap;"><h3 class="block-title m-1 pl-1"><span class="p-1 bg-',' rounded" style="text-align:center; display: inline-block;line-height: normal;width: 70px;color:white;">','</span>','</h3></div></div>'];
+				let percentageSkill = (getPercentageInLevel(results.finalSkillXP,results.finalSkillXP,"skill")).toFixed(1);
+				let percentageSkillElement = (percentageSkill == 0) ? '' : ` +${percentageSkill}%`;
+				let finalSkillLevelElement = wrapper[0] + 'Final Skill Level ' + wrapper[1] + 'success' + wrapper[2] + convertXPToLvl(results.finalSkillXP,true) + ' / 99' + wrapper[3] + percentageSkillElement + wrapper[4];
 				let timeLeftSkillElement = '';
 				if (timeLeftSkill > 0){
 					let finishedTimeSkill = AddSecondsToDate(now,timeLeftSkill);
 					timeLeftSkillElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftSkill) + '<br> Expected finished: ' + DateFormat(finishedTimeSkill,timeLeftSkill) + '</small></div></div>';
 				}
-				let finalMasteryLevel = wrapper[0] + 'Final Mastery Level ' + wrapper[1] + 'info' + wrapper[2] + results.finalMasteryLevel + ' / 99' + wrapper[3];
+				let percentageMastery = (getPercentageInLevel(results.finalMasteryXP,results.finalMasteryXP,"mastery")).toFixed(1);
+				let percentageMasteryElement = (percentageMastery == 0) ? '' : ` +${percentageMastery}%`;
+				let finalMasteryLevelElement = wrapper[0] + 'Final Mastery Level ' + wrapper[1] + 'info' + wrapper[2] + convertXPToLvl(results.finalMasteryXP) + ' / 99' + wrapper[3] + percentageMasteryElement + wrapper[4];
 				let timeLeftMasteryElement = '';
 				if (timeLeftMastery > 0){
 					let finishedTimeMastery = AddSecondsToDate(now,timeLeftMastery);
 					timeLeftMasteryElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftMastery) + '<br> Expected finished: ' + DateFormat(finishedTimeMastery,timeLeftMastery) + '</small></div></div>';
 				}
-				let finalPoolPercentage = wrapper[0] + 'Final Mastery Pool ' + wrapper[1] + 'warning' + wrapper[2] + results.finalPoolPercentage + '%' + wrapper[3];
+				let finalPoolPercentageElement = wrapper[0] + 'Final Mastery Pool ' + wrapper[1] + 'warning' + wrapper[2] + results.finalPoolPercentage + '%' + wrapper[3] + wrapper[4];
 				let timeLeftPoolElement = '';
 				if (timeLeftPool > 0){
 					let finishedTimePool = AddSecondsToDate(now,timeLeftPool);
 					timeLeftPoolElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small class="" style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 100%: ' + secondsToHms(timeLeftPool) + '<br> Expected finished: ' + DateFormat(finishedTimePool,timeLeftPool) + '</small></div></div>';
 				}
-				let tooltip = '<div class="col-12 mt-1">' + finalSkillLevel + timeLeftSkillElement + finalMasteryLevel + timeLeftMasteryElement + finalPoolPercentage + timeLeftPoolElement +'</div>';
+				let tooltip = '<div class="col-12 mt-1">' + finalSkillLevelElement + timeLeftSkillElement + finalMasteryLevelElement + timeLeftMasteryElement + finalPoolPercentageElement + timeLeftPoolElement +'</div>';
 				timeLeftElement._tippy.setContent(tooltip);
+
+				let poolProgress = (results.finalPoolPercentage > 100) ? 100 - ((initialTotalMasteryPoolXP / masteryPoolMaxXP)*100) : (results.finalPoolPercentage - ((initialTotalMasteryPoolXP / masteryPoolMaxXP)*100)).toFixed(4);
+	            $(`#mastery-pool-progress-end-${skillID}`).css("width", poolProgress + "%");
+				let masteryProgress = getPercentageInLevel(initialTotalMasteryXP,results.finalMasteryXP,"mastery",true);
+	            $(`#${skillID}-mastery-pool-progress-end`).css("width", masteryProgress + "%");
+				let skillProgress = getPercentageInLevel(initialSkillXP,results.finalSkillXP,"skill",true);
+	            $(`#skill-progress-bar-end-${skillID}`).css("width", skillProgress + "%");
 			}
 		}
 
