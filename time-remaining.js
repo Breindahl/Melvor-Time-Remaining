@@ -260,7 +260,7 @@
 
 				case CONSTANTS.skill.Firemaking:
 					item = selectedLog;
-					itemXP = logsData[selectedLog].xp + logsData[selectedLog].xp * (logsData[selectedLog].bonfireBonus / 100);
+					itemXP = logsData[selectedLog].xp * (1 + bonfireBonus / 100);
 					skillInterval = logsData[selectedLog].interval;
 					if (godUpgrade[3]) skillInterval *= 0.8;
 					skillReq = [{id: item, qty: 1}];
