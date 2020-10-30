@@ -26,7 +26,7 @@
 
 	function script() {
 		// Loading script
-		console.log('Melvor TimeRemaining Development Loaded');
+		console.log('Melvor TimeRemaining Loaded');
 
 		// Function to check if task is complete
 		function taskComplete(skillID) {
