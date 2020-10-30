@@ -489,7 +489,7 @@
 			function calcMasteryXpToAdd(timePerAction, currentTotalSkillXP, currentMasteryXP, currentPoolMasteryXP, currentTotalMasteryLevelForSkill) {
 
 				let xpModifier = 1;
-				let xpToAdd = (((calcTotalUnlockedItems(skillID, currentTotalSkillXP) * currentTotalMasteryLevelForSkill) / getTotalMasteryLevelForSkill(skillID) + convertXPToLvl(currentMasteryXP) * (getTotalItemsInSkill(skillID) / 10)) * (timePerAction / 1000)) / 2; // General Mastery XP formula
+				let xpToAdd = (((calcTotalUnlockedItems(currentTotalSkillXP) * currentTotalMasteryLevelForSkill) / getTotalMasteryLevelForSkill(skillID) + convertXPToLvl(currentMasteryXP) * (getTotalItemsInSkill(skillID) / 10)) * (timePerAction / 1000)) / 2; // General Mastery XP formula
 				if (currentPoolMasteryXP >= poolLim[0]) xpModifier += 0.05;
 				// If current skill is Firemaking, we need to apply mastery progression from actions and use updated currentPoolMasteryXP values
 				if (skillID == CONSTANTS.skill.Firemaking) {
