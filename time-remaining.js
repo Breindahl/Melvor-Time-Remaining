@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Melvor TimeRemaining
 // @namespace    http://tampermonkey.net/
-// @version      0.6.1
+// @version      0.6.2
 // @description  Shows time remaining for completing a task with your current resources. Takes into account Mastery Levels and other bonuses.
 // @author       Breindahl#2660
 // @match        https://melvoridle.com/*
@@ -106,22 +106,27 @@
 			return new Date(date.getTime() + seconds*1000);
 		}
 
+		function daysBetween(now, then) {
+			const startOfDayNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+			return Math.floor((then - startOfDayNow) / 1000 / 60 / 60 / 24 + (startOfDayNow.getTimezoneOffset() - then.getTimezoneOffset()) / (60 * 24));
+		}
+
 		// Format date 24 hour clock
-		function DateFormat(date,time){
-			let days = Math.floor(time / 86400);
-			days = days > 0 ? ' + ' + days + ' days': '';
-			let hours = date.getHours();
+		function DateFormat(now,then){
+			let days = daysBetween(now,then);
+			days = (days == 0) ? `` : (days == 1) ? ` tomorrow` : ` + ${days} days`;
+			let hours = then.getHours();
 			hours = hours < 10 ? '0' + hours : hours;
-			let minutes = date.getMinutes();
+			let minutes = then.getMinutes();
 			minutes = minutes < 10 ? '0' + minutes : minutes;
 			let strTime = hours + ':' + minutes + days;
 			return strTime;
 		}
 
 		// Format date 12 hour clock
-		// function DateFormat(date,time){
-			// let days = Math.floor(time / 86400);
-			// days = days > 0 ? ' + ' + days + ' days': '';
+		// function DateFormat(now,then){
+			// 	let days = daysBetween(now,then)
+			// 	days = (days == 0) ? `` : (days == 1) ? ` tomorrow` : ` +${days} days`;
 			// let hours = date.getHours();
 			// let AmOrPm = hours >= 12 ? 'pm' : 'am';
 			// hours = (hours % 12) || 12;
@@ -647,7 +652,6 @@
 			}
 
 			var results = calcExpectedTime(recordCraft);
-			console.log("results.finalMasteryXP: " + results.finalMasteryXP);
 
 			//Time left
 			var timeLeft = 0;
@@ -672,7 +676,8 @@
 			if(timeLeftElement !== null) {
 				if (timeLeft !== 0) {
 					let finishedTime = AddSecondsToDate(now,timeLeft);
-					timeLeftElement.textContent = "Will take: " + secondsToHms(timeLeft) + "\r\n Expected finished: " + DateFormat(finishedTime,timeLeft);
+					console.log("finishedTime: " + finishedTime);
+					timeLeftElement.textContent = "Will take: " + secondsToHms(timeLeft) + "\r\n Expected finished: " + DateFormat(now,finishedTime);
 					timeLeftElement.style.display = "block";
 				} else {
 				// empty and reset if no time
@@ -695,7 +700,7 @@
 				let timeLeftSkillElement = '';
 				if (timeLeftSkill > 0){
 					let finishedTimeSkill = AddSecondsToDate(now,timeLeftSkill);
-					timeLeftSkillElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftSkill) + '<br> Expected finished: ' + DateFormat(finishedTimeSkill,timeLeftSkill) + '</small></div></div>';
+					timeLeftSkillElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftSkill) + '<br> Expected finished: ' + DateFormat(now,finishedTimeSkill) + '</small></div></div>';
 				}
 				let percentageMastery = (getPercentageInLevel(results.finalMasteryXP,results.finalMasteryXP,"mastery")).toFixed(1);
 				let percentageMasteryElement = (percentageMastery == 0) ? '' : ` +${percentageMastery}%`;
@@ -703,13 +708,13 @@
 				let timeLeftMasteryElement = '';
 				if (timeLeftMastery > 0){
 					let finishedTimeMastery = AddSecondsToDate(now,timeLeftMastery);
-					timeLeftMasteryElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftMastery) + '<br> Expected finished: ' + DateFormat(finishedTimeMastery,timeLeftMastery) + '</small></div></div>';
+					timeLeftMasteryElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 99: ' + secondsToHms(timeLeftMastery) + '<br> Expected finished: ' + DateFormat(now,finishedTimeMastery) + '</small></div></div>';
 				}
 				let finalPoolPercentageElement = wrapper[0] + 'Final Mastery Pool ' + wrapper[1] + 'warning' + wrapper[2] + results.finalPoolPercentage + '%' + wrapper[3] + wrapper[4];
 				let timeLeftPoolElement = '';
 				if (timeLeftPool > 0){
 					let finishedTimePool = AddSecondsToDate(now,timeLeftPool);
-					timeLeftPoolElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small class="" style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 100%: ' + secondsToHms(timeLeftPool) + '<br> Expected finished: ' + DateFormat(finishedTimePool,timeLeftPool) + '</small></div></div>';
+					timeLeftPoolElement = '<div class="row"><div class="col-12 font-size-sm text-uppercase text-muted mb-1" style="text-align:center"><small class="" style="display:inline-block;clear:both;white-space:pre-line;color:white;">Time to 100%: ' + secondsToHms(timeLeftPool) + '<br> Expected finished: ' + DateFormat(now,finishedTimePool) + '</small></div></div>';
 				}
 				let tooltip = '<div class="col-12 mt-1">' + finalSkillLevelElement + timeLeftSkillElement + finalMasteryLevelElement + timeLeftMasteryElement + finalPoolPercentageElement + timeLeftPoolElement +'</div>';
 				timeLeftElement._tippy.setContent(tooltip);
