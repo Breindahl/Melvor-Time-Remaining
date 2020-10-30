@@ -26,22 +26,12 @@
 
 	function script() {
 		// Loading script
-		console.log('Melvor TimeRemaining Loaded');
+		console.log('Melvor TimeRemaining Development Loaded');
 
-		// Function to send notifications
-		function notify(msg) {
-			One.helpers('notify', {
-				type: 'dark',
-				from: 'bottom',
-				align: 'center',
-				message: msg
-			});
-		}
-
-		// Funtion to check if task is complete
-		function taskComplete() {
+		// Function to check if task is complete
+		function taskComplete(skillID) {
 			if (window.timeLeftLast > 1 && window.timeLeftCurrent === 0) {
-				notify("Task Done");
+				notifyPlayer(skillID,"Task Done","danger");
 				console.log('Melvor TimeRemaining: task done');
 				let ding = new Audio("https://www.myinstants.com/media/sounds/ding-sound-effect.mp3");
 				ding.volume=0.1;
@@ -87,8 +77,8 @@
             }
         }
 
-		// Funtion to get unformatted number for Qty
-		function getQtyUnformat(itemID) {
+		// Function to get unformatted number for Qty
+		function getQtyOfItem(itemID) {
 			for (let i = 0; i < bank.length; i++) {
 				if (bank[i].id === itemID) {
 					return bank[i].qty;
@@ -339,7 +329,7 @@
 					if (ALTMAGIC[selectedAltMagic].selectItem == 1 && selectedMagicItem[1] !== null) { // Spells that just use 1 item
 						skillReq.push({id: selectedMagicItem[1], qty: 1});
 					}
-					else if (ALTMAGIC[selectedAltMagic].selectItem == -1) { // Spells that dont require you to select an item
+					else if (ALTMAGIC[selectedAltMagic].selectItem == -1) { // Spells that doesn't require you to select an item
 						if (ALTMAGIC[selectedAltMagic].needCoal) { // Rags to Riches II
 							skillReq.push({id: 48, qty: 1});
 						}
@@ -388,15 +378,15 @@
 				for (let i = 0; i < masteryLimLevel.length; i++) {
 					chanceToKeep[i] += 0.10; // Add base 10% chance
 				}
-				rhaelyxCharge = getQtyUnformat(CONSTANTS.item.Charge_Stone_of_Rhaelyx);
+				rhaelyxCharge = getQtyOfItem(CONSTANTS.item.Charge_Stone_of_Rhaelyx);
 				chargeUses = rhaelyxCharge * 1000; // Estimated uses from Rhaelyx Charge Stones
 			}
 
 			// Get Item Requirements and Current Requirements
 			for (let i = 0; i < skillReq.length; i++) {
 				let	itemReq = skillReq[i].qty;
-				//Check how many of required resourse in Bank
-				let itemQty = getQtyUnformat(skillReq[i].id);
+				//Check how many of required resource in Bank
+				let itemQty = getQtyOfItem(skillReq[i].id);
 				// Calculate max items you can craft for each itemReq
 				itemCraft[i] = Math.floor(itemQty/itemReq);
 				// Calculate limiting factor and set new record
@@ -429,8 +419,8 @@
 
 					case CONSTANTS.skill.Firemaking: {
 						if (currentPoolMasteryXP >= poolLim[1]) adjustedInterval *= 0.9;
-						let descreasedBurnInterval = 1 - convertXPToLvl(currentMasteryXP) * 0.001;
-						adjustedInterval *= descreasedBurnInterval;
+						let decreasedBurnInterval = 1 - convertXPToLvl(currentMasteryXP) * 0.001;
+						adjustedInterval *= decreasedBurnInterval;
                         break;
 					}
 				}
@@ -476,9 +466,9 @@
                         break;
 
 					case CONSTANTS.skill.Cooking: {
-						let burnchance = calcburnChance(currentMasteryXP);
-						let cookXP = itemXP * (1 - burnchance);
-						let burnXP = 1 * burnchance;
+						let burnChance = calcBurnChance(currentMasteryXP);
+						let cookXP = itemXP * (1 - burnChance);
+						let burnXP = 1 * burnChance;
 						return cookXP + burnXP;
 					}
 				}
@@ -526,10 +516,10 @@
 				xpToAdd *= xpModifier;
 				if (xpToAdd < 1) xpToAdd = 1;
 
-				// Burnchance affects mastery XP
+				// BurnChance affects mastery XP
 				if (skillID == CONSTANTS.skill.Cooking) {
-					let burnchance = calcburnChance(currentMasteryXP);
-					xpToAdd *= (1 - burnchance);
+					let burnChance = calcBurnChance(currentMasteryXP);
+					xpToAdd *= (1 - burnChance);
 				}
 
 				return xpToAdd;
@@ -542,7 +532,7 @@
 			}
 
 			// Calculate burn chance based on mastery level
-			function calcburnChance(currentMasteryXP) {
+			function calcBurnChance(currentMasteryXP) {
 				let burnChance = 0;
 				if (equippedItems.includes(CONSTANTS.item.Cooking_Skillcape) || equippedItems.includes(CONSTANTS.item.Max_Skillcape) || equippedItems.includes(CONSTANTS.item.Cape_of_Completion)) {
 					return burnChance;
@@ -613,7 +603,7 @@
 					let poolXPActions = poolXPToLimit / currentPoolXP;
 					let resourceActions = Math.round(resources / adjustTotalChanceToUseRhaelyx(totalChanceToUse, resources, resources));
 
-					// Mininum actions based on limits
+					// Minimum actions based on limits
 					let expectedActions = Math.ceil(Math.min(masteryXPActions, skillXPActions, poolXPActions, resourceActions));
 
 					// Take away resources based on expectedActions
@@ -657,6 +647,7 @@
 			}
 
 			var results = calcExpectedTime(recordCraft);
+			console.log("results.finalMasteryXP: " + results.finalMasteryXP);
 
 			//Time left
 			var timeLeft = 0;
@@ -747,7 +738,7 @@
 			startSmithingRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Smithing);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Smithing);
 			} catch (e) {
 				console.error(e);
 			}
@@ -768,7 +759,7 @@
 			startFletchingRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Fletching);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Fletching);
 			} catch (e) {
 				console.error(e);
 			}
@@ -789,7 +780,7 @@
 			startRunecraftingRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Runecrafting);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Runecrafting);
 			} catch (e) {
 				console.error(e);
 			}
@@ -810,7 +801,7 @@
 			startCraftingRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Crafting);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Crafting);
 			} catch (e) {
 				console.error(e);
 			}
@@ -831,7 +822,7 @@
 			startHerbloreRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Herblore);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Herblore);
 			} catch (e) {
 				console.error(e);
 			}
@@ -852,7 +843,7 @@
 			startCookingRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Cooking);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Cooking);
 			} catch (e) {
 				console.error(e);
 			}
@@ -873,7 +864,7 @@
 			burnLogRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Firemaking);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Firemaking);
 			} catch (e) {
 				console.error(e);
 			}
@@ -903,7 +894,7 @@
 			castMagicRef(...args);
 			try {
 				timeRemaining(CONSTANTS.skill.Magic);
-				taskComplete();
+				taskComplete(CONSTANTS.skill.Magic);
 			} catch (e) {
 				console.error(e);
 			}
