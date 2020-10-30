@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Melvor TimeRemaining
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2
+// @version      0.6.2.1
 // @description  Shows time remaining for completing a task with your current resources. Takes into account Mastery Levels and other bonuses.
 // @author       Breindahl#2660
 // @match        https://melvoridle.com/*
@@ -676,7 +676,6 @@
 			if(timeLeftElement !== null) {
 				if (timeLeft !== 0) {
 					let finishedTime = AddSecondsToDate(now,timeLeft);
-					console.log("finishedTime: " + finishedTime);
 					timeLeftElement.textContent = "Will take: " + secondsToHms(timeLeft) + "\r\n Expected finished: " + DateFormat(now,finishedTime);
 					timeLeftElement.style.display = "block";
 				} else {
