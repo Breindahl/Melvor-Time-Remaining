@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Melvor TimeRemaining
 // @namespace    http://tampermonkey.net/
-// @version      0.6.2.1
+// @version      0.6.2.2
 // @description  Shows time remaining for completing a task with your current resources. Takes into account Mastery Levels and other bonuses.
 // @author       Breindahl#2660
 // @match        https://melvoridle.com/*
@@ -106,6 +106,7 @@
 			return new Date(date.getTime() + seconds*1000);
 		}
 
+		// Days between now and then
 		function daysBetween(now, then) {
 			const startOfDayNow = new Date(now.getFullYear(), now.getMonth(), now.getDate());
 			return Math.floor((then - startOfDayNow) / 1000 / 60 / 60 / 24 + (startOfDayNow.getTimezoneOffset() - then.getTimezoneOffset()) / (60 * 24));
@@ -127,10 +128,10 @@
 		// function DateFormat(now,then){
 			// 	let days = daysBetween(now,then)
 			// 	days = (days == 0) ? `` : (days == 1) ? ` tomorrow` : ` +${days} days`;
-			// let hours = date.getHours();
+			// let hours = then.getHours();
 			// let AmOrPm = hours >= 12 ? 'pm' : 'am';
 			// hours = (hours % 12) || 12;
-			// let minutes = date.getMinutes();
+			// let minutes = then.getMinutes();
 			// minutes = minutes < 10 ? '0' + minutes : minutes;
 			// let strTime = hours + ':' + minutes + AmOrPm + days;
 			// return strTime;
@@ -651,9 +652,8 @@
 				return {"timeLeft" : Math.round(sumTotalTime), "finalSkillXP" : currentTotalSkillXP, "finalMasteryXP" : currentTotalMasteryXP, "finalPoolPercentage" : Math.min((currentTotalPoolXP/masteryPoolMaxXP)*100,100).toFixed(2), "maxPoolTime" : maxPoolTime, "maxMasteryTime" : maxMasteryTime, "maxSkillTime" : maxSkillTime};
 			}
 
-			var results = calcExpectedTime(recordCraft);
-
 			//Time left
+			var results = 0;
 			var timeLeft = 0;
 			var timeLeftPool = 0;
 			var timeLeftMastery = 0;
@@ -661,6 +661,7 @@
 			if (skillID == CONSTANTS.skill.Magic) {
 				timeLeft = Math.round(recordCraft * skillInterval / 1000);
 			} else {
+				results = calcExpectedTime(recordCraft);
 				timeLeft = Math.round(results.timeLeft / 1000);
 				timeLeftPool = Math.round(results.maxPoolTime / 1000);
 				timeLeftMastery = Math.round(results.maxMasteryTime / 1000);
